@@ -1,16 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/format";
 import { notFound } from "next/navigation";
+import EditClientForm from "@/components/EditClientForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: client }, { data: balances }, { data: invoices }] = await Promise.all([
+  const [{ data: client }, { data: balances }, { data: invoices }, { data: currencies }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", params.id).single(),
     supabase.from("client_balances").select("*").eq("client_id", params.id).order("as_of_date", { ascending: false }),
     supabase.from("invoices").select("*").eq("client_id", params.id).order("invoice_date", { ascending: false }),
+    supabase.from("currencies").select("code").order("code"),
   ]);
 
   if (!client) notFound();
@@ -25,6 +27,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           {client.website ? `${client.website} — ` : ""}
           {client.country || "No country set"}
         </p>
+        <div className="mt-4">
+          <EditClientForm client={client} currencies={currencies ?? []} />
+        </div>
       </header>
 
       <div className="grid grid-cols-4 gap-4 mb-8">

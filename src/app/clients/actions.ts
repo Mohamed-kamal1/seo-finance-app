@@ -32,6 +32,30 @@ export async function updateClientStatus(clientId: string, status: string) {
   revalidatePath("/clients");
 }
 
+export async function updateClientRecord(clientId: string, formData: FormData) {
+  const supabase = createClient();
+  const optionalValue = (name: string) => String(formData.get(name) || "") || null;
+  const optionalNumber = (name: string) => {
+    const value = String(formData.get(name) || "");
+    return value === "" ? null : Number(value);
+  };
+  const payload = {
+    name: String(formData.get("name") || "").trim(),
+    website: optionalValue("website"), country: optionalValue("country"),
+    payment_duration: optionalValue("payment_duration"), currency_code: optionalValue("currency_code"),
+    seo_fee: Number(formData.get("seo_fee") || 0), guest_fee: Number(formData.get("guest_fee") || 0),
+    hosting_fee: Number(formData.get("hosting_fee") || 0), content_fee: Number(formData.get("content_fee") || 0),
+    annual_increase: optionalNumber("annual_increase"), increase_applies_date: optionalValue("increase_applies_date"),
+    contract_date: optionalValue("contract_date"), billing_day: optionalValue("billing_day"),
+    service_type: optionalValue("service_type"), notes: optionalValue("notes"),
+    status: String(formData.get("status") || "active"),
+  };
+  if (!payload.name) return;
+  await supabase.from("clients").update(payload).eq("id", clientId);
+  revalidatePath("/clients");
+  revalidatePath(`/clients/${clientId}`);
+}
+
 export async function deleteClient(clientId: string) {
   const supabase = createClient();
   await supabase.from("clients").delete().eq("id", clientId);
