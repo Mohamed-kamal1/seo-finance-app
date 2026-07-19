@@ -7,14 +7,14 @@ create extension if not exists "pgcrypto";
 
 -- ----------------------------------------------------------------------------
 -- Currencies (matches the "Summary" sheet: SAR / KWD / AED / USD / EGP ...)
--- rate_to_base = how many units of this currency equal 1 base unit (EGP).
+-- rate_to_base = Egyptian-pound price of one unit of this currency.
 -- Edit these to match your real, current rates — they're seed values only.
 -- ----------------------------------------------------------------------------
 create table currencies (
   code          text primary key,          -- 'SAR', 'KWD', 'AED', 'USD', 'EGP', 'KD'...
   name          text not null,
   symbol        text,
-  rate_to_base  numeric(14,4) not null default 1, -- units of this currency per 1 EGP
+  rate_to_base  numeric(14,4) not null default 1, -- EGP per 1 unit of this currency
   is_base       boolean not null default false,
   updated_at    timestamptz not null default now()
 );
@@ -164,12 +164,25 @@ create table content_billing (
   client_id        uuid references clients(id) on delete set null,
   client_name_raw  text,          -- fallback if not matched to a client row
   details          text,          -- article sizes ordered
+  content_detail_ids uuid[],     -- selected Content Details records
   required_amount  numeric(14,2) default 0,
   paid_amount      numeric(14,2) default 0,
   balance          numeric(14,2) default 0,
   currency_code    text references currencies(code),
   period           date,
+  notes            text,
   created_at       timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
+-- Content details (individual content items with word count and price)
+-- ----------------------------------------------------------------------------
+create table content_details (
+  id            uuid primary key default gen_random_uuid(),
+  words         integer not null check (words > 0),
+  price         numeric(14,2) not null default 0 check (price >= 0),
+  currency_code text not null references currencies(code),
+  created_at    timestamptz not null default now()
 );
 
 -- ============================================================================
@@ -252,6 +265,7 @@ alter table transactions enable row level security;
 alter table guest_post_sites enable row level security;
 alter table guest_post_ledger enable row level security;
 alter table content_billing enable row level security;
+alter table content_details enable row level security;
 
 do $$
 declare
@@ -261,7 +275,7 @@ for t in
 select unnest(array[
 'currencies','clients','client_balances','invoices','chart_of_accounts',
 'treasury_accounts','transactions','guest_post_sites','guest_post_ledger',
-'content_billing'
+'content_billing','content_details'
 ])
 loop
 execute format(

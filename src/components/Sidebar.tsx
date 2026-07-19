@@ -9,9 +9,11 @@ const NAV = [
   { href: "/clients", label: "Clients", glyph: "◈" },
   { href: "/invoices", label: "Invoices", glyph: "𝍒" },
   { href: "/guest-posts", label: "Guest Posts", glyph: "⌗" },
+  { href: "/content-details", label: "Content Details", glyph: "C" },
   { href: "/content-billing", label: "Content Billing", glyph: "✎" },
   { href: "/transactions", label: "Ledger", glyph: "≣" },
   { href: "/treasuries", label: "Treasuries", glyph: "⛁" },
+  { href: "/currencies", label: "Currencies", glyph: "$" },
   { href: "/chart-of-accounts", label: "Chart of Accounts", glyph: "☰" },
   { href: "/reports", label: "Reports", glyph: "◱" },
 ];

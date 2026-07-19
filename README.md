@@ -107,3 +107,11 @@ component) for any new record type.
   everyone who logs in sees everything). If you need per-user permissions
   later, that's a schema change (add a `role` to a `profiles` table and
   scope RLS policies by role) — ask and it can be added.
+# Currency rate refresh
+
+The Currencies page has a **Refresh rates now** button that uses the logged-in user's permissions. For the automatic daily refresh on Vercel, add these environment variables in the Vercel project:
+
+- `CRON_SECRET`: a long, randomly generated secret.
+- `SUPABASE_SERVICE_ROLE_KEY`: the Supabase service-role key (server-side only; never expose it in a `NEXT_PUBLIC_` variable).
+
+The scheduled job is configured in `vercel.json` and runs daily at 01:15 UTC.
