@@ -255,20 +255,20 @@ alter table content_billing enable row level security;
 
 do $$
 declare
-  t text;
+t text;
 begin
-  for t in
-    select unnest(array[
-      'currencies','clients','client_balances','invoices','chart_of_accounts',
-      'treasury_accounts','transactions','guest_post_sites','guest_post_ledger',
-      'content_billing'
-    ])
-  loop
-    execute format(
-      'create policy "authenticated_full_access" on %I for all using (auth.role() = ''authenticated'') with check (auth.role() = ''authenticated'');',
-      t
-    );
-  end loop;
+for t in
+select unnest(array[
+'currencies','clients','client_balances','invoices','chart_of_accounts',
+'treasury_accounts','transactions','guest_post_sites','guest_post_ledger',
+'content_billing'
+])
+loop
+execute format(
+'create policy "authenticated_full_access" on %I for all using (auth.role() = ''authenticated'') with check (auth.role() = ''authenticated'');',
+t
+);
+end loop;
 end $$;
 
 -- ============================================================================
@@ -276,9 +276,9 @@ end $$;
 -- update these to current rates before relying on them)
 -- ============================================================================
 insert into currencies (code, name, symbol, rate_to_base, is_base) values
-  ('EGP', 'Egyptian Pound', 'ج.م', 1, true),
-  ('SAR', 'Saudi Riyal', 'ريال', 12.6974, false),
-  ('KWD', 'Kuwaiti Dinar', 'د.ك', 154.6066, false),
-  ('AED', 'UAE Dirham', 'د.إ', 12.9663, false),
-  ('USD', 'US Dollar', '$', 47.6266, false)
+('EGP', 'Egyptian Pound', 'ج.م', 1, true),
+('SAR', 'Saudi Riyal', 'ريال', 12.6974, false),
+('KWD', 'Kuwaiti Dinar', 'د.ك', 154.6066, false),
+('AED', 'UAE Dirham', 'د.إ', 12.9663, false),
+('USD', 'US Dollar', '$', 47.6266, false)
 on conflict (code) do nothing;

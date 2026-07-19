@@ -8,6 +8,8 @@ const NAV = [
   { href: "/", label: "Dashboard", glyph: "▤" },
   { href: "/clients", label: "Clients", glyph: "◈" },
   { href: "/invoices", label: "Invoices", glyph: "𝍒" },
+  { href: "/guest-posts", label: "Guest Posts", glyph: "⌗" },
+  { href: "/content-billing", label: "Content Billing", glyph: "✎" },
   { href: "/transactions", label: "Ledger", glyph: "≣" },
   { href: "/treasuries", label: "Treasuries", glyph: "⛁" },
   { href: "/chart-of-accounts", label: "Chart of Accounts", glyph: "☰" },

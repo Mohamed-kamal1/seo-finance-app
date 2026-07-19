@@ -221,6 +221,70 @@ def main():
 
     print(f"Parsed {len(invoices_to_insert)} manual invoices.")
 
+    # ------------------------------------------------------------------
+    # 4) Guest Post site ledgers (repeating 5-column block per month)
+    # ------------------------------------------------------------------
+    gp_ws = finance_wb["Guest Post"]
+    gp_sites = set()
+    gp_entries = []
+    # Column A = site name; data starts at row 4 (row1=month headers, row3=column headers)
+    block_start_cols = list(range(2, gp_ws.max_column + 1, 5))  # B, G, L, ...
+    for row_idx in range(4, gp_ws.max_row + 1):
+        site_name = gp_ws.cell(row=row_idx, column=1).value
+        if not site_name or not str(site_name).strip():
+            continue
+        site_name = str(site_name).strip()
+        gp_sites.add(site_name)
+        for block_i, col in enumerate(block_start_cols):
+            month_num = block_i + 1  # blocks run Jan, Feb, Mar... in column order
+            if month_num > 12:
+                break
+            beg = gp_ws.cell(row=row_idx, column=col).value
+            credit = gp_ws.cell(row=row_idx, column=col + 1).value
+            content = gp_ws.cell(row=row_idx, column=col + 2).value
+            transfer = gp_ws.cell(row=row_idx, column=col + 3).value
+            current = gp_ws.cell(row=row_idx, column=col + 4).value
+            if all(v is None for v in (beg, credit, content, transfer, current)):
+                continue
+            gp_entries.append({
+                "_site_name": site_name,
+                "month": date(2026, month_num, 1).isoformat(),
+                "beg_balance": float(beg or 0),
+                "credit": float(credit or 0),
+                "content": float(content or 0),
+                "transfer": float(transfer or 0),
+                "current_balance": float(current or 0),
+            })
+
+    print(f"Parsed {len(gp_sites)} guest post sites, {len(gp_entries)} monthly ledger entries.")
+
+    # ------------------------------------------------------------------
+    # 5) Content billing (per-client per-word pricing, single snapshot)
+    # ------------------------------------------------------------------
+    content_ws = finance_wb["Content"]
+    content_rows = []
+    for row_idx in range(3, content_ws.max_row + 1):
+        name = content_ws.cell(row=row_idx, column=1).value
+        if not name or not str(name).strip():
+            continue
+        details = content_ws.cell(row=row_idx, column=2).value
+        required_raw = content_ws.cell(row=row_idx, column=3).value
+        paid_raw = content_ws.cell(row=row_idx, column=6).value
+        balance_raw = content_ws.cell(row=row_idx, column=7).value
+        required_amt, cur1 = parse_amount(required_raw)
+        paid_amt, _ = parse_amount(paid_raw)
+        balance_amt, cur3 = parse_amount(balance_raw)
+        content_rows.append({
+            "client_name_raw": str(name).strip(),
+            "details": str(details).strip() if details else None,
+            "required_amount": required_amt,
+            "paid_amount": paid_amt,
+            "balance": balance_amt,
+            "currency_code": cur1 or cur3,
+        })
+
+    print(f"Parsed {len(content_rows)} content billing rows.")
+
     if args.dry_run:
         print("\n--dry-run set: no data written. Re-run without it to import.")
         return
@@ -302,6 +366,35 @@ def main():
     for i in range(0, len(tx_rows), 500):
         supabase.table("transactions").insert(tx_rows[i:i + 500]).execute()
     print(f"Inserted {len(tx_rows)} transactions.")
+
+    # Guest post sites + ledger
+    site_id_by_name = {}
+    for sname in sorted(gp_sites):
+        res = supabase.table("guest_post_sites").upsert({"name": sname}, on_conflict="name").execute()
+        site_id_by_name[sname] = res.data[0]["id"]
+    print(f"Inserted {len(site_id_by_name)} guest post sites.")
+
+    gp_ledger_rows = []
+    for e in gp_entries:
+        sid = site_id_by_name.get(e["_site_name"])
+        if not sid:
+            continue
+        row = {k: v for k, v in e.items() if not k.startswith("_")}
+        row["site_id"] = sid
+        gp_ledger_rows.append(row)
+    for i in range(0, len(gp_ledger_rows), 500):
+        supabase.table("guest_post_ledger").upsert(
+            gp_ledger_rows[i:i + 500], on_conflict="site_id,month"
+        ).execute()
+    print(f"Inserted {len(gp_ledger_rows)} guest post ledger entries.")
+
+    # Content billing -- matched to a client by exact name where possible
+    for i in range(0, len(content_rows), 500):
+        batch = content_rows[i:i + 500]
+        for row in batch:
+            row["client_id"] = client_id_by_name.get(row["client_name_raw"])
+        supabase.table("content_billing").insert(batch).execute()
+    print(f"Inserted {len(content_rows)} content billing rows.")
 
     print("\nDone. Review data in the app — some fields (currency detection, "
           "treasury opening balances) are best-effort and worth a spot check.")
