@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV = [
+  { href: "/classifications", label: "Classifications", glyph: "#" },
   { href: "/", label: "Dashboard", glyph: "▤" },
   { href: "/clients", label: "Clients", glyph: "◈" },
   { href: "/invoices", label: "Invoices", glyph: "𝍒" },

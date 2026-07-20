@@ -103,6 +103,14 @@ create table chart_of_accounts (
 );
 
 -- ----------------------------------------------------------------------------
+-- Classifications (simple reusable category names)
+-- ----------------------------------------------------------------------------
+create table classifications (
+  id    uuid primary key default gen_random_uuid(),
+  name  text not null unique
+);
+
+-- ----------------------------------------------------------------------------
 -- Treasury / cash accounts (from "Treasures", "Banque Misr" etc.)
 -- ----------------------------------------------------------------------------
 create table treasury_accounts (
@@ -262,6 +270,7 @@ alter table clients enable row level security;
 alter table client_balances enable row level security;
 alter table invoices enable row level security;
 alter table chart_of_accounts enable row level security;
+alter table classifications enable row level security;
 alter table treasury_accounts enable row level security;
 alter table transactions enable row level security;
 alter table guest_post_sites enable row level security;
@@ -276,7 +285,7 @@ begin
 for t in
 select unnest(array[
 'currencies','clients','client_balances','invoices','chart_of_accounts',
-'treasury_accounts','transactions','guest_post_sites','guest_post_ledger',
+'treasury_accounts','transactions','guest_post_sites','guest_post_ledger','classifications',
 'content_billing','content_details'
 ])
 loop
