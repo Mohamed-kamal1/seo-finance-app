@@ -140,8 +140,10 @@ create index on transactions (classification_is);
 -- Guest post site ledgers (from "Guest Post")
 -- ----------------------------------------------------------------------------
 create table guest_post_sites (
-  id    uuid primary key default gen_random_uuid(),
-  name  text not null unique
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null unique,
+  client_id   uuid references clients(id) on delete set null,
+  website_url text
 );
 
 create table guest_post_ledger (
