@@ -5,10 +5,10 @@ import { createTransaction } from "@/app/transactions/actions";
 
 export default function AddTransactionForm({
   treasuries,
-  categories,
+  classifications,
 }: {
   treasuries: { id: string; name: string }[];
-  categories: { category: string }[];
+  classifications: { name: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -41,6 +41,10 @@ export default function AddTransactionForm({
             <input name="description" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
           </div>
           <div>
+            <label className="block text-xs text-muted mb-1.5">Note</label>
+            <input name="notes" placeholder="Optional note" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
+          </div>
+          <div>
             <label className="block text-xs text-muted mb-1.5">Treasury</label>
             <select name="treasury_account_id" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
               <option value="">—</option>
@@ -61,16 +65,17 @@ export default function AddTransactionForm({
           </div>
           <div>
             <label className="block text-xs text-muted mb-1.5">IS Classification</label>
-            <input name="classification_is" list="categories" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
-            <datalist id="categories">
-              {categories.map((c, i) => (
-                <option key={i} value={c.category} />
-              ))}
-            </datalist>
+            <select name="classification_is" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
+              <option value="">Select classification</option>
+              {classifications.map((classification) => <option key={classification.name} value={classification.name}>{classification.name}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-muted mb-1.5">CF Classification</label>
-            <input name="classification_cf" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
+            <select name="classification_cf" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
+              <option value="">Select classification</option>
+              {classifications.map((classification) => <option key={classification.name} value={classification.name}>{classification.name}</option>)}
+            </select>
           </div>
           <div className="col-span-4">
             <button type="submit" className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2">

@@ -5,13 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV = [
-  { href: "/classifications", label: "Classifications", glyph: "#" },
   { href: "/", label: "Dashboard", glyph: "▤" },
   { href: "/clients", label: "Clients", glyph: "◈" },
   { href: "/invoices", label: "Invoices", glyph: "𝍒" },
   { href: "/guest-posts", label: "Guest Posts", glyph: "⌗" },
   { href: "/content-details", label: "Content Details", glyph: "C" },
   { href: "/content-billing", label: "Content Billing", glyph: "✎" },
+  { href: "/classifications", label: "Classifications", glyph: "#" },
   { href: "/transactions", label: "Ledger", glyph: "≣" },
   { href: "/treasuries", label: "Treasuries", glyph: "⛁" },
   { href: "/currencies", label: "Currencies", glyph: "$" },

@@ -131,6 +131,7 @@ create table transactions (
   actual_date           date not null,
   cf_date               date,
   description           text,
+  notes                 text,
   debit                 numeric(16,2) default 0,   -- money in
   credit                numeric(16,2) default 0,   -- money out
   classification_is     text,   -- links loosely to chart_of_accounts.category (Income Statement bucket)
