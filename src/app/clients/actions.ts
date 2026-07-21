@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 export async function createClientRecord(formData: FormData) {
   const supabase = createClient();
+  const requestedStatus = String(formData.get("status") || "active").toLowerCase();
 
   const payload = {
     name: String(formData.get("name") || ""),
@@ -17,7 +18,7 @@ export async function createClientRecord(formData: FormData) {
     hosting_fee: Number(formData.get("hosting_fee") || 0),
     content_fee: Number(formData.get("content_fee") || 0),
     notes: String(formData.get("notes") || "") || null,
-    status: String(formData.get("status") || "active"),
+    status: requestedStatus === "paused" ? "paused" : "active",
   };
 
   if (!payload.name) return;

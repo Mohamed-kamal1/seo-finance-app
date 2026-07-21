@@ -40,6 +40,13 @@ export default function AddClientForm({ currencies }: { currencies: { code: stri
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-xs text-muted mb-1.5">Status</label>
+            <select name="status" defaultValue="active" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+            </select>
+          </div>
           <Field name="seo_fee" label="SEO fee" type="number" />
           <Field name="guest_fee" label="Guest post fee" type="number" />
           <Field name="hosting_fee" label="Hosting fee" type="number" />

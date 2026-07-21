@@ -15,7 +15,8 @@ const NAV = [
   { href: "/transactions", label: "Ledger", glyph: "≣" },
   { href: "/treasuries", label: "Treasuries", glyph: "⛁" },
   { href: "/currencies", label: "Currencies", glyph: "$" },
-  { href: "/chart-of-accounts", label: "Chart of Accounts", glyph: "☰" },
+  { href: "/import-data", label: "Import Excel", glyph: "↑" },
+  // { href: "/chart-of-accounts", label: "Chart of Accounts", glyph: "☰" },
   { href: "/reports", label: "Reports", glyph: "◱" },
 ];
 

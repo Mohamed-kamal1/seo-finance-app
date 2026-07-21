@@ -27,7 +27,7 @@ export default async function DashboardPage() {
 
   const totalTreasuryBalance = (treasuries ?? []).reduce((s: number, t: any) => s + Number(t.current_balance || 0), 0);
   const totalOutstanding = (outstanding ?? []).reduce((s: number, c: any) => s + Number(c.current_due || 0), 0);
-  const activeClients = (clients ?? []).filter((c: any) => c.status === "active").length;
+  const activeClients = (clients ?? []).filter((c: any) => c.status?.toLowerCase() === "active").length;
 
   const latestMonth = chartData[chartData.length - 1];
 

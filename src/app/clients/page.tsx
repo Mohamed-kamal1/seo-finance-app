@@ -60,7 +60,7 @@ export default async function ClientsPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
-                        c.status === "active"
+                        c.status?.toLowerCase() === "active"
                           ? "bg-[rgba(62,214,166,0.12)] text-accent"
                           : "bg-[rgba(240,101,79,0.12)] text-danger"
                       }`}
