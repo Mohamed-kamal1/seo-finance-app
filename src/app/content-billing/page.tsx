@@ -7,13 +7,18 @@ export const dynamic = "force-dynamic";
 
 export default async function ContentBillingPage() {
   const supabase = createClient();
-  const [{ data: rows }, { data: clients }, { data: contentDetails }] = await Promise.all([
+  const [{ data: rows }, { data: clients }, { data: contentDetails }, { data: currencies }] = await Promise.all([
     supabase.from("content_billing").select("*, clients(name, website)").order("created_at", { ascending: false }).limit(300),
     supabase.from("clients").select("id,name,website").order("website"),
     supabase.from("content_details").select("id,words,price,currency_code").order("words"),
+    supabase.from("currencies").select("code,rate_to_base").order("code"),
   ]);
 
-  const totalOwed = (rows ?? []).reduce((sum: number, row: any) => sum + Number(row.balance || 0), 0);
+  const rateByCurrency = new Map((currencies ?? []).map((currency: any) => [currency.code, Number(currency.rate_to_base) || 1]));
+  const totalOwed = (rows ?? []).reduce(
+    (sum: number, row: any) => sum + Number(row.balance || 0) * (rateByCurrency.get(row.currency_code) || 1),
+    0,
+  );
 
   return (
     <div className="p-8 max-w-6xl">
@@ -22,7 +27,7 @@ export default async function ContentBillingPage() {
         <p className="text-sm text-muted mt-1">Content orders by website — {money(totalOwed)} owed across {(rows ?? []).length} records</p>
       </header>
 
-      <ContentBillingForm action={createContentBilling} clients={clients ?? []} contentDetails={contentDetails ?? []} />
+      <ContentBillingForm action={createContentBilling} clients={clients ?? []} contentDetails={contentDetails ?? []} currencies={currencies ?? []} />
 
       <div className="card overflow-hidden">
         <table className="w-full text-sm">

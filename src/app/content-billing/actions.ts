@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 export async function createContentBilling(formData: FormData) {
   const supabase = createClient();
   const requestedPaidAmount = Number(formData.get("paid_amount") || 0);
+  const requestedCurrency = String(formData.get("currency_code") || "").trim();
   const contentDetailIds = formData.getAll("content_detail_ids").map(String).filter(Boolean);
   if (!contentDetailIds.length) return;
 
@@ -15,14 +16,23 @@ export async function createContentBilling(formData: FormData) {
     .in("id", contentDetailIds);
   if (error || !contentDetails?.length) return;
 
-  const currencies = new Set(contentDetails.map((item: any) => item.currency_code));
-  if (currencies.size !== 1) return;
+  if (!requestedCurrency) return;
+  const { data: currencyRows, error: currencyError } = await supabase
+    .from("currencies")
+    .select("code,rate_to_base")
+    .in("code", [...new Set([...contentDetails.map((item: any) => item.currency_code), requestedCurrency])]);
+  if (currencyError || !currencyRows) return;
+  const rateByCurrency = new Map(currencyRows.map((item: any) => [item.code, Number(item.rate_to_base) || 1]));
+  const targetRate = rateByCurrency.get(requestedCurrency);
+  if (!targetRate || contentDetails.some((item: any) => !rateByCurrency.has(item.currency_code))) return;
 
   const selectedItems = contentDetails.map((item: any) => {
     const quantity = Math.max(1, Number(formData.get(`quantity_${item.id}`) || 1));
     return { ...item, quantity };
   });
-  const required_amount = selectedItems.reduce((sum: number, item: any) => sum + Number(item.price) * item.quantity, 0);
+  const required_amount = selectedItems.reduce((sum: number, item: any) => (
+    sum + Number(item.price) * (rateByCurrency.get(item.currency_code) || 1) / targetRate * item.quantity
+  ), 0);
   const paid_amount = Math.min(required_amount, Math.max(0, requestedPaidAmount));
   const details = selectedItems.map((item: any) => `${item.quantity} × ${item.words} words`).join("; ");
 
@@ -34,7 +44,7 @@ export async function createContentBilling(formData: FormData) {
     required_amount,
     paid_amount,
     balance: required_amount - paid_amount,
-    currency_code: selectedItems[0].currency_code,
+    currency_code: requestedCurrency,
     period: String(formData.get("period") || "") || null,
     notes: String(formData.get("notes") || "").trim() || null,
   };

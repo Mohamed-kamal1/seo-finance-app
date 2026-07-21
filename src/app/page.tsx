@@ -25,8 +25,8 @@ export default async function DashboardPage() {
     net: Number(m.net) || 0,
   }));
 
-  const totalTreasuryBalance = (treasuries ?? []).reduce((s: number, t: any) => s + Number(t.current_balance || 0), 0);
-  const totalOutstanding = (outstanding ?? []).reduce((s: number, c: any) => s + Number(c.current_due || 0), 0);
+  const totalTreasuryBalance = (treasuries ?? []).reduce((s: number, t: any) => s + Number(t.current_balance_base || 0), 0);
+  const totalOutstanding = (outstanding ?? []).reduce((s: number, c: any) => s + Number(c.current_due_base || 0), 0);
   const activeClients = (clients ?? []).filter((c: any) => c.status?.toLowerCase() === "active").length;
 
   const latestMonth = chartData[chartData.length - 1];
@@ -47,8 +47,8 @@ export default async function DashboardPage() {
       </header>
 
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total cash on hand" value={money(totalTreasuryBalance)} sub={`${(treasuries ?? []).length} treasuries`} />
-        <StatCard label="Outstanding from clients" value={money(totalOutstanding)} tone="negative" />
+        <StatCard label="Total cash on hand" value={money(totalTreasuryBalance)} sub={`EGP equivalent · ${(treasuries ?? []).length} treasuries`} />
+        <StatCard label="Outstanding from clients" value={money(totalOutstanding)} tone="negative" sub="EGP equivalent" />
         <StatCard label="This month's net" value={money(latestMonth?.net ?? 0)} tone={(latestMonth?.net ?? 0) >= 0 ? "positive" : "negative"} />
         <StatCard label="Active clients" value={String(activeClients)} sub={`${(clients ?? []).length} total`} />
       </div>

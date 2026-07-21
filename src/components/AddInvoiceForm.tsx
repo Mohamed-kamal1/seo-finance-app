@@ -62,14 +62,6 @@ export default function AddInvoiceForm({
           <Field name="past_due" label="Past due" type="number" />
           <Field name="discount" label="Discount" type="number" />
           <Field name="collections" label="Collections" type="number" />
-          <div>
-            <label className="block text-xs text-muted mb-1.5">Status</label>
-            <select name="collection_status" className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
-              <option>Pending</option>
-              <option>Partial</option>
-              <option>Paid</option>
-            </select>
-          </div>
           <div className="col-span-4">
             <label className="block text-xs text-muted mb-1.5">Notes</label>
             <textarea name="notes" rows={2} className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
