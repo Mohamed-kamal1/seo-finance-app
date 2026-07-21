@@ -55,6 +55,3 @@ scripts/
 
 Row Level Security is enabled on the app tables. Authenticated users can access the financial data; anonymous visitors cannot. Because every signed-in user has full access, only create accounts for people you trust with the agency's financial records.
 
-## Live Demo
-
-https://seo-finance-app.vercel.app/
