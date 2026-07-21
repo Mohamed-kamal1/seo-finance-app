@@ -1,117 +1,60 @@
-# SEO House — Finance & Client Ledger
+# SEO House Finance
 
-A private, single-admin web app for managing clients, invoices, the transaction
-ledger, treasuries, and financial reports — built to replace the two
-spreadsheets (`clients.xlsx`, `Finance_2026.xlsx`) with a real database.
+SEO House Finance is a private web app for running an SEO agency's client and financial operations in one place. It replaces spreadsheet-based tracking with a secure Supabase database, live balances, and automatically generated reports.
 
-Stack: **Next.js 14 (App Router) + TypeScript + Tailwind + Supabase (Postgres + Auth)**.
+## Technology used
 
-## 1. Create the Supabase project
+- **Next.js 14** — full-stack React framework using the App Router
+- **TypeScript** — type-safe application code
+- **Tailwind CSS** — responsive UI styling
+- **Supabase** — PostgreSQL database and authentication
+- **Recharts** — dashboard charts for financial trends
+- **Vercel** — hosting and scheduled currency-rate refreshes
 
-1. Go to [supabase.com](https://supabase.com), create a new project.
-2. Open the **SQL Editor**, paste the contents of `supabase/schema.sql`, and run it.
-   This creates every table, the reporting views, row-level security, and
-   seeds the currency list (SAR/KWD/AED/USD/EGP — update the rates to current
-   values in the `currencies` table whenever you like).
-3. In **Authentication → Users**, add yourself as a user (email + password).
-   This is a single-admin app — anyone who logs in has full access, so only
-   create accounts for people you trust with the finances.
+## What the app does
 
-## 2. Configure the app
+- **Dashboard** — shows total cash across treasuries, outstanding client balances, the latest monthly net result, active-client count, revenue-versus-expense trends, and the current expense mix.
+- **Clients** — stores client details, websites, service fees, contract and billing information, status, balance history, and invoice history.
+- **Invoices** — records invoices and tracks their collection status as pending, partial, or paid.
+- **Guest Posts** — maintains monthly balances for guest-post websites, including credit, content usage, and transfers.
+- **Content Details & Billing** — keeps content pricing by word count and tracks content orders, payments, and outstanding balances by client website.
+- **Ledger** — records money in and out, dates, notes, classifications, and the treasury account involved in each transaction.
+- **Treasuries** — manages cash and bank accounts and calculates their current balances from opening balances and ledger activity.
+- **Currencies** — manages EGP exchange rates, with an option to refresh rates manually and through a scheduled Vercel job.
+- **Chart of Accounts & Classifications** — provides reusable financial categories for consistent reporting.
+- **Reports** — generates monthly Income Statement and Cash Flow tables directly from ledger data.
 
-```bash
-cp .env.local.example .env.local
+## How it works
+
+The ledger is the financial source of truth. Each transaction can be assigned to a treasury account, an Income Statement category, and a Cash Flow category. The dashboard, treasury balances, and reports are calculated from this data, so there is no separate manual reconciliation step.
+
+All application data is stored in Supabase Postgres. Access requires Supabase authentication; the app is designed for a trusted administrator or small trusted team.
+
+## Project structure
+
+```text
+src/
+  app/                 Routes, page components, server actions, and API routes
+    api/cron/          Scheduled currency-refresh endpoint
+    clients/           Client management and client detail pages
+    invoices/          Invoice creation and collection tracking
+    transactions/      General ledger
+    treasuries/        Cash and bank account management
+    reports/           Income Statement and Cash Flow reports
+    ...                Dashboard, currencies, content, guest posts, and settings pages
+  components/          Reusable forms, navigation, cards, and charts
+  lib/                 Shared types, formatting helpers, currency logic, and Supabase clients
+supabase/
+  schema.sql           Database schema, reporting views, security policies, and seed data
+  migrations/          Incremental database migrations
+scripts/
+  import_data.py       Optional spreadsheet-to-Supabase import utility
 ```
 
-Fill in from **Project Settings → API**:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (only needed for the import script — never used
-  in the browser, never commit it)
+## Security
 
-## 3. Run it locally
+Row Level Security is enabled on the app tables. Authenticated users can access the financial data; anonymous visitors cannot. Because every signed-in user has full access, only create accounts for people you trust with the agency's financial records.
 
-```bash
-npm install
-npm run dev
-```
+## Live Demo
 
-Visit `http://localhost:3000`, log in with the account you created in step 1.
-
-## 4. Import your existing spreadsheet data (optional, recommended)
-
-The migration script reads both workbooks and loads clients, client balance
-history, manual invoices, treasury accounts, chart-of-accounts categories,
-and the full transaction ledger into Supabase.
-
-```bash
-cd scripts
-pip install -r requirements.txt
-export SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-export SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Preview first — prints counts, writes nothing:
-python import_data.py --clients /path/to/clients.xlsx --finance /path/to/Finance_2026.xlsx --dry-run
-
-# Then actually import:
-python import_data.py --clients /path/to/clients.xlsx --finance /path/to/Finance_2026.xlsx
-```
-
-Read the docstring at the top of `import_data.py` — a few sheets in the
-original workbook are hand-built dropdown lists or ad-hoc block layouts
-rather than real tables (notably `Chart of Account` and `Treasures`), so
-those are approximated rather than parsed literally. After importing:
-- Spot check parsed amounts and currencies (they're extracted from text
-  like `"117 KWD"` with a regex, which is not bulletproof).
-- Set correct **opening balances** on each treasury account under
-  **Treasuries** — the import creates them at 0 since the source layout
-  couldn't be parsed reliably.
-- The script is safe to dry-run repeatedly, but running the real import
-  twice will duplicate rows — only run it once against a fresh database,
-  or clear the tables first.
-
-## 5. Deploy
-
-Push this folder to a GitHub repo, then import it in
-[vercel.com/new](https://vercel.com/new). Add the two `NEXT_PUBLIC_*` env vars
-in the Vercel project settings (skip the service role key — it's not needed
-at runtime, only for the one-off import). Deploy.
-
-## What's included
-
-| Area | What it does |
-|---|---|
-| **Dashboard** | Cash on hand, outstanding receivables, monthly net, revenue/expense chart, expense mix |
-| **Clients** | Client list with fees & currency, per-client balance history and invoice history |
-| **Invoices** | Create invoices, track collection status (Pending/Partial/Paid) |
-| **Ledger** | The general transaction ledger (debit/credit, IS & CF classification, treasury) |
-| **Treasuries** | Cash/bank accounts with live running balances computed from the ledger |
-| **Chart of Accounts** | Editable category list used to classify ledger entries |
-| **Reports** | Income Statement and Cash Flow, generated live from the ledger by month |
-
-## Extending it
-
-This covers the core of both spreadsheets. Sheets not yet modeled as their
-own UI (Guest Post per-site ledgers, per-word Content billing, Egyptian
-e-invoice records, raw bank statement import) already have tables reserved
-for them in `schema.sql` (`guest_post_sites`, `guest_post_ledger`,
-`content_billing`) or can be added the same way — copy the pattern used in
-`src/app/invoices` (a `page.tsx`, an `actions.ts`, and a small add-form
-component) for any new record type.
-
-## Security notes
-
-- All tables have Row Level Security enabled; only authenticated users can
-  read or write anything. There is no public/anonymous access.
-- This is built for a single trusted admin (or a small trusted team, since
-  everyone who logs in sees everything). If you need per-user permissions
-  later, that's a schema change (add a `role` to a `profiles` table and
-  scope RLS policies by role) — ask and it can be added.
-# Currency rate refresh
-
-The Currencies page has a **Refresh rates now** button that uses the logged-in user's permissions. For the automatic daily refresh on Vercel, add these environment variables in the Vercel project:
-
-- `CRON_SECRET`: a long, randomly generated secret.
-- `SUPABASE_SERVICE_ROLE_KEY`: the Supabase service-role key (server-side only; never expose it in a `NEXT_PUBLIC_` variable).
-
-The scheduled job is configured in `vercel.json` and runs daily at 01:15 UTC.
+https://seo-finance-app.vercel.app/
