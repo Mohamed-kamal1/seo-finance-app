@@ -14,14 +14,31 @@ export default function AddTransactionForm({
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [debit, setDebit] = useState(0);
+  const [credit, setCredit] = useState(0);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const { addToast } = useToast();
 
   async function handleSubmit(fd: FormData) {
+    // Client-side validation: debit and credit cannot both be > 0
+    const d = Number(fd.get("debit") || 0);
+    const c = Number(fd.get("credit") || 0);
+    if (d > 0 && c > 0) {
+      setValidationError("A transaction can have debit OR credit, not both.");
+      return;
+    }
+    if (d === 0 && c === 0) {
+      setValidationError("Enter a debit or credit amount.");
+      return;
+    }
+    setValidationError(null);
     setLoading(true);
     try {
       await createTransaction(fd);
       formRef.current?.reset();
+      setDebit(0);
+      setCredit(0);
       setOpen(false);
       addToast("Transaction entry saved", "success");
     } catch {
@@ -71,11 +88,27 @@ export default function AddTransactionForm({
           </div>
           <div>
             <label className="block text-xs text-muted mb-1.5">Debit (in)</label>
-            <input name="debit" type="number" step="0.01" defaultValue={0} className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
+            <input
+              name="debit"
+              type="number"
+              step="0.01"
+              defaultValue={0}
+              value={debit}
+              onChange={(e) => { setDebit(Number(e.target.value)); setCredit(0); setValidationError(null); }}
+              className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white"
+            />
           </div>
           <div>
             <label className="block text-xs text-muted mb-1.5">Credit (out)</label>
-            <input name="credit" type="number" step="0.01" defaultValue={0} className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
+            <input
+              name="credit"
+              type="number"
+              step="0.01"
+              defaultValue={0}
+              value={credit}
+              onChange={(e) => { setCredit(Number(e.target.value)); setDebit(0); setValidationError(null); }}
+              className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white"
+            />
           </div>
           <div>
             <label className="block text-xs text-muted mb-1.5">IS Classification</label>
@@ -91,6 +124,9 @@ export default function AddTransactionForm({
               {classifications.map((classification) => <option key={classification.name} value={classification.name}>{classification.name}</option>)}
             </select>
           </div>
+          {validationError && (
+            <div className="col-span-4 text-xs text-danger bg-danger/10 rounded-md px-3 py-2">{validationError}</div>
+          )}
           <div className="col-span-4 pt-2 border-t border-line">
             <button
               type="submit"

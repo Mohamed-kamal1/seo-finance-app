@@ -166,3 +166,41 @@ export async function deleteInvoice(formData: FormData) {
   revalidatePath("/invoices");
   revalidatePath("/");
 }
+
+export async function bulkUpdateInvoiceStatus(formData: FormData) {
+  const ids = String(formData.get("ids") || "");
+  const status = String(formData.get("status") || "");
+  if (!ids || !["Paid", "Pending", "Partial"].includes(status)) return;
+
+  const invoiceIds = ids.split(",").filter(Boolean);
+  if (!invoiceIds.length) return;
+
+  const supabase = createClient();
+
+  // Get all client IDs for balance sync
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("client_id")
+    .in("id", invoiceIds);
+
+  const clientIds = new Set((invoices ?? []).map((inv: any) => inv.client_id).filter(Boolean));
+
+  await supabase
+    .from("invoices")
+    .update({
+      collection_status: status,
+      payment_date: status === "Paid" ? new Date().toISOString().slice(0, 10) : null,
+    })
+    .in("id", invoiceIds);
+
+  // Sync balances for all affected clients
+  for (const clientId of clientIds) {
+    await syncClientBalance(supabase, clientId);
+  }
+
+  revalidatePath("/invoices");
+  revalidatePath("/");
+  for (const clientId of clientIds) {
+    revalidatePath(`/clients/${clientId}`);
+  }
+}

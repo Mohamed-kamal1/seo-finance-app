@@ -69,6 +69,30 @@ export async function updateClientRecord(clientId: string, formData: FormData) {
 
 export async function deleteClient(clientId: string) {
   const supabase = createClient();
+
+  // Check for related records before deleting
+  const { count: invoiceCount } = await supabase
+    .from("invoices")
+    .select("*", { count: "exact", head: true })
+    .eq("client_id", clientId);
+
+  if (invoiceCount && invoiceCount > 0) {
+    throw new Error(
+      `Cannot delete client with ${invoiceCount} invoice(s). Delete or reassign the invoices first.`
+    );
+  }
+
+  const { count: contentCount } = await supabase
+    .from("content_billing")
+    .select("*", { count: "exact", head: true })
+    .eq("client_id", clientId);
+
+  if (contentCount && contentCount > 0) {
+    throw new Error(
+      `Cannot delete client with ${contentCount} content billing record(s). Delete or reassign them first.`
+    );
+  }
+
   await supabase.from("clients").delete().eq("id", clientId);
   revalidatePath("/clients");
 }

@@ -73,10 +73,16 @@ export default async function ContentDetailsPage({ searchParams }: { searchParam
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-2">
-                    <button form={`update-${item.id}`} type="submit" className="text-xs text-accent hover:text-white transition-colors">Save</button>
+                    <button form={`update-${item.id}`} type="submit" className="border border-accent/30 text-accent hover:bg-accent-dim hover:border-accent rounded-md px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                      Save
+                    </button>
                     <form action={deleteContentDetail}>
                       <input type="hidden" name="id" value={item.id} />
-                      <button type="submit" className="text-xs text-danger hover:text-white transition-colors">Delete</button>
+                      <button type="submit" className="border border-danger/30 text-danger hover:bg-[rgba(240,101,79,0.12)] hover:border-danger rounded-md px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                        Delete
+                      </button>
                     </form>
                   </div>
                 </td>

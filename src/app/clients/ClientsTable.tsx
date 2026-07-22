@@ -57,8 +57,8 @@ export default function ClientsTable({ data }: { data: any[] }) {
             render: (row: any) => (
                 <span
                     className={`text-xs px-2 py-1 rounded-full ${row.status?.toLowerCase() === "active"
-                            ? "bg-[rgba(62,214,166,0.12)] text-accent"
-                            : "bg-[rgba(240,101,79,0.12)] text-danger"
+                        ? "bg-[rgba(62,214,166,0.12)] text-accent"
+                        : "bg-[rgba(240,101,79,0.12)] text-danger"
                         }`}
                 >
                     {row.status}
@@ -72,9 +72,19 @@ export default function ClientsTable({ data }: { data: any[] }) {
             data={data}
             columns={columns}
             searchFields={["name", "website", "country"]}
-            searchPlaceholder="Search by name, website, or country…"
+            searchPlaceholder="Search by name, website, or country\u2026"
             emptyMessage="No clients yet. Run the migration script or add one above."
             keyExtractor={(row: any) => row.id}
+            exportFilename="seo-house-clients"
+            exportColumns={[
+                { key: "name", label: "Client" },
+                { key: "website", label: "Website" },
+                { key: "country", label: "Country" },
+                { key: "payment_duration", label: "Billing" },
+                { key: "feeTotal", label: "Monthly fees" },
+                { key: "current_due", label: "Current due" },
+                { key: "status", label: "Status" },
+            ]}
         />
     );
 }

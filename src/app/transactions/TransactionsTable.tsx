@@ -66,9 +66,19 @@ export default function TransactionsTable({ data, treasuries, classifications }:
             data={data}
             columns={columns}
             searchFields={["description", "notes", "_treasury", "classification_is"]}
-            searchPlaceholder="Search transactions…"
+            searchPlaceholder="Search transactions\u2026"
             emptyMessage="No transactions yet."
             keyExtractor={(row: any) => row.id}
+            exportFilename="seo-house-transactions"
+            exportColumns={[
+                { key: "_date", label: "Date" },
+                { key: "description", label: "Description" },
+                { key: "notes", label: "Note" },
+                { key: "_treasury", label: "Treasury" },
+                { key: "classification_is", label: "IS Category" },
+                { key: "debit", label: "Debit" },
+                { key: "credit", label: "Credit" },
+            ]}
         />
     );
 }

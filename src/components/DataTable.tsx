@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { exportToCSV } from "@/lib/export";
 
 export interface Column<T> {
     key: string;
@@ -17,15 +18,21 @@ interface DataTableProps<T> {
     searchPlaceholder?: string;
     emptyMessage?: string;
     keyExtractor: (row: T) => string | number;
+    /** Optional filename prefix for CSV export. If provided, an export button is shown. */
+    exportFilename?: string;
+    /** Optional columns for CSV export (defaults to displayed columns, minus virtual/action cols). */
+    exportColumns?: { key: string; label: string }[];
 }
 
 export default function DataTable<T extends Record<string, any>>({
     data,
     columns,
     searchFields = [],
-    searchPlaceholder = "Search…",
+    searchPlaceholder = "Search\u2026",
     emptyMessage = "No data found.",
     keyExtractor,
+    exportFilename,
+    exportColumns,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<string | null>(null);
@@ -77,10 +84,10 @@ export default function DataTable<T extends Record<string, any>>({
 
     return (
         <div>
-            {/* Search bar */}
-            {searchFields.length > 0 && (
-                <div className="mb-4">
-                    <div className="relative max-w-xs">
+            {/* Search bar + Export */}
+            <div className="mb-4 flex items-center gap-3">
+                {searchFields.length > 0 && (
+                    <div className="relative max-w-xs flex-1">
                         <svg
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                             width="14"
@@ -116,8 +123,25 @@ export default function DataTable<T extends Record<string, any>>({
                             </button>
                         )}
                     </div>
-                </div>
-            )}
+                )}
+                {exportFilename && (
+                    <button
+                        onClick={() => {
+                            const cols = exportColumns ?? columns.filter((c) => c.key !== "actions").map((c) => ({ key: c.key, label: c.label }));
+                            exportToCSV(filtered, cols, exportFilename);
+                        }}
+                        className="border border-line text-muted hover:text-white hover:border-accent rounded-md px-3 py-2 text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0"
+                        title={`Export ${filtered.length} rows to CSV`}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Export CSV
+                    </button>
+                )}
+            </div>
 
             {/* Table */}
             <div className="card overflow-hidden">
