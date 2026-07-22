@@ -21,7 +21,7 @@ const SHEET_TABLES: Record<string, string> = {
 
 const COLUMNS: Record<string, Set<string>> = {
   currencies: new Set(["code", "name", "symbol", "rate_to_base", "is_base"]),
-  clients: new Set(["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status"]),
+  clients: new Set(["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status", "total_amount", "collections", "current_due"]),
   client_balances: new Set(["client_id", "as_of_date", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "notes"]),
   invoices: new Set(["internal_id", "client_id", "invoice_date", "service", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "collection_status", "payment_date", "notes"]),
   chart_of_accounts: new Set(["category", "group_type"]), classifications: new Set(["name"]),
@@ -121,6 +121,7 @@ export async function importWorkbook(supabase: SupabaseClient, bytes: ArrayBuffe
   for (const row of sites) { if (row.client_name) { row.client_id = clientIds.get(String(row.client_name)); delete row.client_name; } }
   if (sites.length) { await write(supabase, "guest_post_sites", sites, "name"); counts.guest_post_sites = sites.length; }
   const siteIds = await lookup(supabase, "guest_post_sites");
+  const importedClientIds = new Set<string>();
   for (const table of ["client_balances", "invoices", "transactions", "guest_post_ledger", "content_billing", "content_details"]) {
     const rows: Row[] = [];
     for (const source of tables.get(table) || []) {
@@ -138,8 +139,14 @@ export async function importWorkbook(supabase: SupabaseClient, bytes: ArrayBuffe
         throw new Error(`Table "${table}": guest-post site "${String(source.site_name)}" was not found in the Guest Posts sheet or database.`);
       }
       rows.push(row);
+      if (table === "invoices" && row.client_id) importedClientIds.add(String(row.client_id));
     }
     if (rows.length) { await write(supabase, table, rows, table === "guest_post_ledger" ? "site_id,month" : undefined); counts[table] = rows.length; }
+  }
+  // Sync client balances for any clients that had invoices imported
+  for (const clientId of importedClientIds) {
+    const { error } = await supabase.rpc("sync_client_balance", { p_client_id: clientId });
+    if (error) console.warn(`Failed to sync balance for client ${clientId}:`, error.message);
   }
   return { counts, skipped };
 }

@@ -2,6 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export async function syncClientBalance(supabase: SupabaseClient, clientId: string) {
+  // Calls the database function which sums invoices and updates the client row
+  await supabase.rpc("sync_client_balance", { p_client_id: clientId });
+}
 
 export async function createClientRecord(formData: FormData) {
   const supabase = createClient();
@@ -19,6 +25,9 @@ export async function createClientRecord(formData: FormData) {
     content_fee: Number(formData.get("content_fee") || 0),
     notes: String(formData.get("notes") || "") || null,
     status: requestedStatus === "paused" ? "paused" : "active",
+    total_amount: 0,
+    collections: 0,
+    current_due: 0,
   };
 
   if (!payload.name) return;
@@ -36,6 +45,7 @@ export async function updateClientStatus(clientId: string, status: string) {
 export async function updateClientRecord(clientId: string, formData: FormData) {
   const supabase = createClient();
   const optionalValue = (name: string) => String(formData.get(name) || "") || null;
+  const requestedStatus = String(formData.get("status") || "active").toLowerCase();
   const optionalNumber = (name: string) => {
     const value = String(formData.get(name) || "");
     return value === "" ? null : Number(value);
@@ -49,7 +59,7 @@ export async function updateClientRecord(clientId: string, formData: FormData) {
     annual_increase: optionalNumber("annual_increase"), increase_applies_date: optionalValue("increase_applies_date"),
     contract_date: optionalValue("contract_date"), billing_day: optionalValue("billing_day"),
     service_type: optionalValue("service_type"), notes: optionalValue("notes"),
-    status: String(formData.get("status") || "active"),
+    status: requestedStatus === "paused" ? "paused" : "active",
   };
   if (!payload.name) return;
   await supabase.from("clients").update(payload).eq("id", clientId);

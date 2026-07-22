@@ -40,6 +40,9 @@ create table clients (
   service_type                   text,                -- خدمات ...
   notes                           text,
   status                          text not null default 'active', -- active/paused/churned
+  total_amount                    numeric(14,2) not null default 0, -- merged from invoices
+  collections                     numeric(14,2) not null default 0, -- merged from invoices
+  current_due                     numeric(14,2) not null default 0, -- merged from invoices
   created_at                       timestamptz not null default now()
 );
 

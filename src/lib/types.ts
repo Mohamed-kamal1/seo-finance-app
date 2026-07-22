@@ -23,6 +23,9 @@ export type Client = {
   service_type: string | null;
   notes: string | null;
   status: string;
+  total_amount: number;
+  collections: number;
+  current_due: number;
 };
 
 export type ClientBalance = {

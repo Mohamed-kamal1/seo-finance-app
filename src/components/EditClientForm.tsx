@@ -44,7 +44,13 @@ export default function EditClientForm({ client, currencies }: { client: ClientF
           {currencies.map((currency) => <option key={currency.code} value={currency.code}>{currency.code}</option>)}
         </select>
       </div>
-      <Field name="status" label="Status" defaultValue={client.status} />
+      <div>
+        <label className="block text-xs text-muted mb-1.5">Status</label>
+        <select name="status" defaultValue={client.status?.toLowerCase() === "paused" ? "paused" : "active"} className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+        </select>
+      </div>
       <Field name="seo_fee" label="SEO fee" type="number" defaultValue={client.seo_fee} />
       <Field name="guest_fee" label="Guest post fee" type="number" defaultValue={client.guest_fee} />
       <Field name="hosting_fee" label="Hosting fee" type="number" defaultValue={client.hosting_fee} />

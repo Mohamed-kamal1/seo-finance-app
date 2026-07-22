@@ -8,9 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: client }, { data: balances }, { data: invoices }, { data: currencies }] = await Promise.all([
+  const [{ data: client }, { data: invoices }, { data: currencies }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", params.id).single(),
-    supabase.from("client_balances").select("*").eq("client_id", params.id).order("as_of_date", { ascending: false }),
     supabase.from("invoices").select("*").eq("client_id", params.id).order("invoice_date", { ascending: false }),
     supabase.from("currencies").select("code").order("code"),
   ]);
@@ -40,35 +39,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </div>
 
       <section className="mb-8">
-        <h2 className="text-sm text-white mb-3">Balance history</h2>
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted uppercase tracking-wider border-b border-line">
-                <th className="px-4 py-2.5 font-medium">Date</th>
-                <th className="px-4 py-2.5 font-medium text-right">Total</th>
-                <th className="px-4 py-2.5 font-medium text-right">Collections</th>
-                <th className="px-4 py-2.5 font-medium text-right">Current due</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(balances ?? []).map((b: any) => (
-                <tr key={b.id} className="ledger-row">
-                  <td className="px-4 py-2.5 text-muted">{new Date(b.as_of_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2.5 text-right font-mono-num">{money(b.total_amount, currency)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono-num text-accent">{money(b.collections, currency)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono-num text-danger">{money(b.current_due, currency)}</td>
-                </tr>
-              ))}
-              {!balances?.length && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-muted text-sm">
-                    No balance snapshots recorded.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <h2 className="text-sm text-white mb-3">Balance</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <MiniStat label="Total invoiced" value={money(client.total_amount, currency)} />
+          <MiniStat label="Collected" value={money(client.collections, currency)} />
+          <MiniStat label="Due" value={money(client.current_due, currency)} />
         </div>
       </section>
 
@@ -81,6 +56,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                 <th className="px-4 py-2.5 font-medium">Date</th>
                 <th className="px-4 py-2.5 font-medium">Service</th>
                 <th className="px-4 py-2.5 font-medium text-right">Total</th>
+                <th className="px-4 py-2.5 font-medium text-right">Collected</th>
+                <th className="px-4 py-2.5 font-medium text-right">Due</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
               </tr>
             </thead>
@@ -90,6 +67,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                   <td className="px-4 py-2.5 text-muted">{new Date(inv.invoice_date).toLocaleDateString()}</td>
                   <td className="px-4 py-2.5">{inv.service || "—"}</td>
                   <td className="px-4 py-2.5 text-right font-mono-num">{money(inv.total_amount, inv.currency_code || currency)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono-num text-accent">{money(inv.collections, inv.currency_code || currency)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono-num text-danger">{money(inv.current_due, inv.currency_code || currency)}</td>
                   <td className="px-4 py-2.5">
                     <StatusPill status={inv.collection_status} />
                   </td>
@@ -97,7 +76,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
               ))}
               {!invoices?.length && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-muted text-sm">
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted text-sm">
                     No invoices recorded.
                   </td>
                 </tr>

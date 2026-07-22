@@ -7,13 +7,10 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
   const supabase = createClient();
-  const [{ data: clients }, { data: currencies }, { data: outstanding }] = await Promise.all([
+  const [{ data: clients }, { data: currencies }] = await Promise.all([
     supabase.from("clients").select("*").order("name"),
     supabase.from("currencies").select("code").order("code"),
-    supabase.from("v_client_outstanding").select("*"),
   ]);
-
-  const outstandingByClient = new Map((outstanding ?? []).map((o: any) => [o.client_id, o]));
 
   return (
     <div className="p-8 max-w-7xl">
@@ -39,7 +36,6 @@ export default async function ClientsPage() {
           </thead>
           <tbody>
             {(clients ?? []).map((c: any) => {
-              const due = outstandingByClient.get(c.id);
               const feeTotal = (c.seo_fee || 0) + (c.guest_fee || 0) + (c.hosting_fee || 0) + (c.content_fee || 0);
               return (
                 <tr key={c.id} className="ledger-row">
@@ -55,15 +51,14 @@ export default async function ClientsPage() {
                     {money(feeTotal, c.currency_code || "EGP")}
                   </td>
                   <td className="px-4 py-3 text-right font-mono-num text-danger">
-                    {due ? money(due.current_due, due.currency_code || "EGP") : "—"}
+                    {c.current_due ? money(c.current_due, c.currency_code || "EGP") : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        c.status?.toLowerCase() === "active"
-                          ? "bg-[rgba(62,214,166,0.12)] text-accent"
-                          : "bg-[rgba(240,101,79,0.12)] text-danger"
-                      }`}
+                      className={`text-xs px-2 py-1 rounded-full ${c.status?.toLowerCase() === "active"
+                        ? "bg-[rgba(62,214,166,0.12)] text-accent"
+                        : "bg-[rgba(240,101,79,0.12)] text-danger"
+                        }`}
                     >
                       {c.status}
                     </span>
