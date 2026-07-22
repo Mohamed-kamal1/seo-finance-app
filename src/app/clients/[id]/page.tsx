@@ -19,7 +19,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const currency = client.currency_code || "EGP";
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-8">
       <header className="mb-6">
         <h1 className="font-display text-2xl text-white">{client.name}</h1>
         <p className="text-sm text-muted mt-1">
@@ -105,4 +105,4 @@ function StatusPill({ status }: { status: string }) {
     Pending: "bg-[rgba(240,101,79,0.12)] text-danger",
   };
   return <span className={`text-xs px-2 py-1 rounded-full ${map[status] || "bg-panel2 text-muted"}`}>{status}</span>;
-}
+};

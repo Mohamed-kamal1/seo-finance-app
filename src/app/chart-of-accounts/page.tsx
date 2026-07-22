@@ -15,7 +15,7 @@ export default async function ChartOfAccountsPage() {
   }));
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-8">
       <header className="mb-6">
         <h1 className="font-display text-2xl text-white">Chart of Accounts</h1>
         <p className="text-sm text-muted mt-1">Categories used to classify ledger entries on the Income Statement.</p>

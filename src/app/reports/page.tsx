@@ -27,7 +27,7 @@ export default async function ReportsPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl">
+    <div className="p-8">
       <header className="mb-8">
         <h1 className="font-display text-2xl text-white">Reports</h1>
         <p className="text-sm text-muted mt-1">Generated live from the transaction ledger — no manual reconciliation needed.</p>

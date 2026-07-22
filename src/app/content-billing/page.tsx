@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createContentBilling, updateContentBillingPayment } from "./actions";
 import { money } from "@/lib/format";
 import ContentBillingForm from "@/components/ContentBillingForm";
+import EditContentBillingForm from "@/components/EditContentBillingForm";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function ContentBillingPage() {
   );
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-8">
       <header className="mb-6">
         <h1 className="font-display text-2xl text-white">Content Billing</h1>
         <p className="text-sm text-muted mt-1">Content orders by website — {money(totalOwed)} owed across {(rows ?? []).length} records</p>
@@ -38,7 +39,8 @@ export default async function ContentBillingPage() {
               <th className="px-4 py-3 font-medium text-right">Required</th>
               <th className="px-4 py-3 font-medium text-right">Paid</th>
               <th className="px-4 py-3 font-medium text-right">Balance</th>
-              <th className="px-4 py-3 font-medium text-right">Action</th>
+              <th className="px-4 py-3 font-medium text-right">Payment</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -53,10 +55,11 @@ export default async function ContentBillingPage() {
                   <input form={`payment-${row.id}`} name="paid_amount" type="number" min="0" max={Number(row.required_amount || 0)} step="0.01" required defaultValue={row.paid_amount} className="w-24 bg-panel2 border border-line rounded-md px-2 py-1.5 text-sm text-accent text-right font-mono-num" />
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono-num text-danger">{money(row.balance, row.currency_code || "EGP")}</td>
-                <td className="px-4 py-2.5 text-right"><button form={`payment-${row.id}`} type="submit" className="text-xs text-accent hover:text-white transition-colors">Save paid</button></td>
+                <td className="px-4 py-2.5 text-right"><button form={`payment-${row.id}`} type="submit" className="border border-accent/30 text-accent hover:bg-accent-dim hover:border-accent rounded-md px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>Save paid</button></td>
+                <td className="px-4 py-2.5 text-right"><EditContentBillingForm row={row} clients={clients ?? []} /></td>
               </tr>
             ))}
-            {!rows?.length && <tr><td colSpan={6} className="px-4 py-10 text-center text-muted text-sm">No content billing records yet.</td></tr>}
+            {!rows?.length && <tr><td colSpan={7} className="px-4 py-10 text-center text-muted text-sm">No content billing records yet.</td></tr>}
           </tbody>
         </table>
       </div>

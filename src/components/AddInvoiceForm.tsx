@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { createInvoice } from "@/app/invoices/actions";
+import Modal from "./Modal";
+import { useToast } from "./ToastProvider";
 
 export default function AddInvoiceForm({
   clients,
@@ -11,28 +13,40 @@ export default function AddInvoiceForm({
   currencies: { code: string }[];
 }) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const { addToast } = useToast();
+
+  async function handleSubmit(fd: FormData) {
+    setLoading(true);
+    try {
+      await createInvoice(fd);
+      formRef.current?.reset();
+      setOpen(false);
+      addToast("Invoice created successfully", "success");
+    } catch {
+      addToast("Failed to create invoice", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(true)}
         className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition-opacity"
       >
-        {open ? "Cancel" : "+ Add invoice"}
+        + Add invoice
       </button>
 
-      {open && (
+      <Modal open={open} onClose={() => setOpen(false)} title="Add Invoice" wide>
         <form
           ref={formRef}
-          action={async (fd) => {
-            await createInvoice(fd);
-            formRef.current?.reset();
-            setOpen(false);
-          }}
-          className="card p-5 mt-4 grid grid-cols-4 gap-3"
+          action={handleSubmit}
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3"
         >
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs text-muted mb-1.5">Client</label>
             <select name="client_id" required className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white">
               <option value="">Select client</option>
@@ -66,13 +80,18 @@ export default function AddInvoiceForm({
             <label className="block text-xs text-muted mb-1.5">Notes</label>
             <textarea name="notes" rows={2} className="w-full bg-panel2 border border-line rounded-md px-3 py-2 text-sm text-white" />
           </div>
-          <div className="col-span-4">
-            <button type="submit" className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2">
-              Save invoice
+          <div className="col-span-4 pt-2 border-t border-line">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2 w-full hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading && <span className="w-4 h-4 rounded-full border-2 border-ink/30 border-t-ink animate-spin" />}
+              {loading ? "Saving..." : "Save invoice"}
             </button>
           </div>
         </form>
-      )}
+      </Modal>
     </div>
   );
 }

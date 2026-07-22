@@ -66,3 +66,38 @@ export async function updateContentBillingPayment(formData: FormData) {
   await supabase.from("content_billing").update({ paid_amount, balance: Number(record.required_amount || 0) - paid_amount }).eq("id", id);
   revalidatePath("/content-billing");
 }
+
+export async function updateContentBilling(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const supabase = createClient();
+  const { data: record } = await supabase.from("content_billing").select("required_amount").eq("id", id).single();
+  if (!record) return;
+
+  const required_amount = Math.max(0, Number(formData.get("required_amount") || 0));
+  const paid_amount = Math.min(required_amount, Math.max(0, Number(formData.get("paid_amount") || 0)));
+  const payload = {
+    client_id: String(formData.get("client_id") || "") || null,
+    client_name_raw: null,
+    details: String(formData.get("details") || "") || null,
+    required_amount,
+    paid_amount,
+    balance: required_amount - paid_amount,
+    currency_code: String(formData.get("currency_code") || "") || null,
+    period: String(formData.get("period") || "") || null,
+    notes: String(formData.get("notes") || "").trim() || null,
+  };
+
+  await supabase.from("content_billing").update(payload).eq("id", id);
+  revalidatePath("/content-billing");
+}
+
+export async function deleteContentBilling(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const supabase = createClient();
+  await supabase.from("content_billing").delete().eq("id", id);
+  revalidatePath("/content-billing");
+}

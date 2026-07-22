@@ -1,8 +1,11 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0b1220] text-[#e7edf7] px-6">
-      <div className="rounded-xl border border-[#233252] bg-[#111a2c] px-6 py-5 text-sm text-[#9fb0cf] shadow-lg">
-        Loading…
+    <div className="min-h-screen flex items-center justify-center px-6 py-16">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full border-2 border-line border-t-accent animate-spin" />
+        </div>
+        <div className="text-sm text-muted">Loading…</div>
       </div>
     </div>
   );

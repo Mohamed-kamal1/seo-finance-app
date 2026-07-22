@@ -90,3 +90,31 @@ export async function deleteLedgerEntry(formData: FormData) {
   await createClient().from("guest_post_ledger").delete().eq("id", id);
   revalidatePath("/guest-posts");
 }
+
+export async function updateGuestPostSite(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const payload = {
+    name: String(formData.get("name") || "").trim(),
+    website_url: normaliseUrl(String(formData.get("website_url") || "").trim()),
+    client_id: String(formData.get("client_id") || "") || null,
+  };
+  if (!payload.name) return;
+
+  await supabase.from("guest_post_sites").update(payload).eq("id", id);
+  revalidatePath("/guest-posts");
+}
+
+export async function deleteGuestPostSite(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const supabase = createClient();
+  // Delete all ledger entries for this site first
+  await supabase.from("guest_post_ledger").delete().eq("site_id", id);
+  // Then delete the site itself
+  await supabase.from("guest_post_sites").delete().eq("id", id);
+  revalidatePath("/guest-posts");
+}

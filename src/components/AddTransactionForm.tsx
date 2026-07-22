@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { createTransaction } from "@/app/transactions/actions";
+import Modal from "./Modal";
+import { useToast } from "./ToastProvider";
 
 export default function AddTransactionForm({
   treasuries,
@@ -11,26 +13,38 @@ export default function AddTransactionForm({
   classifications: { name: string }[];
 }) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const { addToast } = useToast();
+
+  async function handleSubmit(fd: FormData) {
+    setLoading(true);
+    try {
+      await createTransaction(fd);
+      formRef.current?.reset();
+      setOpen(false);
+      addToast("Transaction entry saved", "success");
+    } catch {
+      addToast("Failed to save transaction", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(true)}
         className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition-opacity"
       >
-        {open ? "Cancel" : "+ Add entry"}
+        + Add entry
       </button>
 
-      {open && (
+      <Modal open={open} onClose={() => setOpen(false)} title="Add Ledger Entry" wide>
         <form
           ref={formRef}
-          action={async (fd) => {
-            await createTransaction(fd);
-            formRef.current?.reset();
-            setOpen(false);
-          }}
-          className="card p-5 mt-4 grid grid-cols-4 gap-3"
+          action={handleSubmit}
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3"
         >
           <div>
             <label className="block text-xs text-muted mb-1.5">Date</label>
@@ -77,13 +91,18 @@ export default function AddTransactionForm({
               {classifications.map((classification) => <option key={classification.name} value={classification.name}>{classification.name}</option>)}
             </select>
           </div>
-          <div className="col-span-4">
-            <button type="submit" className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2">
-              Save entry
+          <div className="col-span-4 pt-2 border-t border-line">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-accent text-ink text-sm font-medium rounded-md px-4 py-2 w-full hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading && <span className="w-4 h-4 rounded-full border-2 border-ink/30 border-t-ink animate-spin" />}
+              {loading ? "Saving..." : "Save entry"}
             </button>
           </div>
         </form>
-      )}
+      </Modal>
     </div>
   );
 }

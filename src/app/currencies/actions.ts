@@ -32,3 +32,11 @@ export async function refreshCurrencies() {
   await refreshCurrencyRates();
   revalidatePath("/currencies");
 }
+
+export async function deleteCurrency(formData: FormData) {
+  const code = String(formData.get("code") || "").trim();
+  if (!code || code === "EGP") return;
+
+  await createClient().from("currencies").delete().eq("code", code);
+  revalidatePath("/currencies");
+}

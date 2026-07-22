@@ -14,7 +14,7 @@ export default async function ContentDetailsPage({ searchParams }: { searchParam
   const totalWords = (items ?? []).reduce((sum: number, item: any) => sum + Number(item.words || 0), 0);
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-8">
       <header className="mb-6">
         <h1 className="font-display text-2xl text-white">Content Details</h1>
         <p className="text-sm text-muted mt-1">Create and manage content items with their word counts and values.</p>
