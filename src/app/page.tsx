@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import StatCard from "@/components/StatCard";
-import { RevenueExpenseChart, CategoryPie } from "@/components/DashboardCharts";
+import { RevenueExpenseChart, CategoryPie, ReceivablesAgingChart, ProfitMarginChart, TreasuryPie, CollectionRateChart } from "@/components/DashboardCharts";
 import EmptyState from "@/components/EmptyState";
 import { money, monthLabel } from "@/lib/format";
 import Link from "next/link";
@@ -10,13 +10,14 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const supabase = createClient();
 
-  const [{ data: monthly }, { data: treasuries }, { data: outstanding }, { data: clients }, { data: isView }] =
+  const [{ data: monthly }, { data: treasuries }, { data: outstanding }, { data: clients }, { data: isView }, { data: invoicesData }] =
     await Promise.all([
       supabase.from("v_monthly_summary").select("*").order("month"),
       supabase.from("v_treasury_balances").select("*"),
       supabase.from("v_client_outstanding").select("*"),
       supabase.from("clients").select("id,status"),
       supabase.from("v_income_statement").select("*"),
+      supabase.from("invoices").select("invoice_date, total_amount, collections, current_due, currency_code"),
     ]);
 
   const chartData = (monthly ?? []).map((m: any) => ({
@@ -48,6 +49,53 @@ export default async function DashboardPage() {
   const netTrend = latestMonth && prevMonth
     ? ((latestMonth.net - prevMonth.net) / Math.abs(prevMonth.net || 1)) * 100
     : null;
+
+  // ─── GROUP A: New computed data ─────────────────────────────────────────
+
+  // 1. Receivables Aging
+  const now = new Date();
+  const agingBuckets = [
+    { name: "0-30 days", value: 0, color: "#3ED6A6" },
+    { name: "31-60 days", value: 0, color: "#F2B84B" },
+    { name: "61-90 days", value: 0, color: "#F0654F" },
+    { name: "90+ days", value: 0, color: "#E53E3E" },
+  ];
+  for (const inv of invoicesData ?? []) {
+    const due = Number(inv.current_due || 0);
+    if (due <= 0) continue;
+    const daysOverdue = Math.floor((now.getTime() - new Date(inv.invoice_date).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysOverdue <= 30) agingBuckets[0].value += due;
+    else if (daysOverdue <= 60) agingBuckets[1].value += due;
+    else if (daysOverdue <= 90) agingBuckets[2].value += due;
+    else agingBuckets[3].value += due;
+  }
+  const agingData = agingBuckets.filter((b) => b.value > 0);
+
+  // 2. Profit Margin %
+  const marginData = chartData
+    .filter((m: any) => m.revenue > 0)
+    .map((m: any) => ({ month: m.month, margin: (m.net / m.revenue) * 100 }));
+
+  // 3. Treasury Composition
+  const treasuryPieData = (treasuries ?? []).map((t: any) => ({
+    name: t.name || t.currency_code || "Unknown",
+    value: Number(t.current_balance_base || 0),
+  })).filter((t: any) => t.value > 0);
+
+  // 4. Collection Rate Over Time
+  const invoicesByMonth: Record<string, { total: number; collected: number }> = {};
+  for (const inv of invoicesData ?? []) {
+    const monthKey = inv.invoice_date.slice(0, 7);
+    if (!invoicesByMonth[monthKey]) invoicesByMonth[monthKey] = { total: 0, collected: 0 };
+    invoicesByMonth[monthKey].total += Number(inv.total_amount || 0);
+    invoicesByMonth[monthKey].collected += Number(inv.collections || 0);
+  }
+  const collectionRateData = Object.entries(invoicesByMonth)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, vals]) => ({
+      month: monthLabel(key + "-01"),
+      rate: vals.total > 0 ? (vals.collected / vals.total) * 100 : 0,
+    }));
 
   return (
     <div className="p-4 sm:p-8">
@@ -99,6 +147,48 @@ export default async function DashboardPage() {
             <CategoryPie data={expenseByCategory} />
           ) : (
             <EmptyState icon="money" title="No expense data" description="No expense data for this month." />
+          )}
+        </div>
+      </div>
+
+      {/* ─── NEW GROUP A CHARTS ─────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="card p-5 stagger-7">
+          <div className="text-sm text-white mb-1">Receivables Aging</div>
+          <div className="text-xs text-muted mb-4">Outstanding invoices by overdue period</div>
+          {agingData.length ? (
+            <ReceivablesAgingChart data={agingData} />
+          ) : (
+            <EmptyState icon="data" title="No receivables" description="No outstanding invoices." />
+          )}
+        </div>
+        <div className="card p-5 stagger-8">
+          <div className="text-sm text-white mb-1">Monthly Profit Margin</div>
+          <div className="text-xs text-muted mb-4">Net income as a % of revenue</div>
+          {marginData.length ? (
+            <ProfitMarginChart data={marginData} />
+          ) : (
+            <EmptyState icon="data" title="No margin data" description="Add transactions to see profit margin trends." />
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="card p-5 stagger-9">
+          <div className="text-sm text-white mb-1">Treasury Composition</div>
+          <div className="text-xs text-muted mb-4">Cash distribution across accounts</div>
+          {treasuryPieData.length ? (
+            <TreasuryPie data={treasuryPieData} />
+          ) : (
+            <EmptyState icon="money" title="No treasury data" description="No treasury accounts with balance." />
+          )}
+        </div>
+        <div className="card p-5 stagger-10">
+          <div className="text-sm text-white mb-1">Collection Rate</div>
+          <div className="text-xs text-muted mb-4">Percentage of invoiced amount collected per month</div>
+          {collectionRateData.length ? (
+            <CollectionRateChart data={collectionRateData} />
+          ) : (
+            <EmptyState icon="data" title="No invoice data" description="Add invoices to see collection rates." />
           )}
         </div>
       </div>
