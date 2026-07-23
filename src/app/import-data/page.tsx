@@ -8,8 +8,8 @@ export default async function ImportDataPage() {
 
   // Fetch row counts for all relevant tables
   const tables = [
-    "currencies", "clients", "client_balances", "invoices",
-    "chart_of_accounts", "classifications", "treasury_accounts",
+    "currencies", "clients", "invoices",
+    "classifications", "treasury_accounts",
     "transactions", "guest_post_sites", "guest_post_ledger",
     "content_billing", "content_details",
   ] as const;
@@ -24,7 +24,6 @@ export default async function ImportDataPage() {
   );
 
   const totalRows = counts.reduce((sum, c) => sum + c.count, 0);
-  const populatedTables = counts.filter((c) => c.count > 0);
 
   return (
     <div className="p-4 sm:p-8 page-enter">
@@ -48,28 +47,21 @@ export default async function ImportDataPage() {
         </div>
       </header>
 
-      {/* Stats cards */}
-      {populatedTables.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-          {populatedTables.slice(0, 8).map(({ table, count }) => (
-            <div key={table} className="card p-3 card-accent-top">
-              <div className="text-xs text-muted capitalize truncate">
-                {table.replace(/_/g, " ")}
-              </div>
-              <div className="font-mono-num text-lg text-white mt-1">
-                {count.toLocaleString()}
-              </div>
+      {/* Stats cards - show all available tables */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+        {counts.map(({ table, count }) => (
+          <div key={table} className={`card p-3 ${count > 0 ? 'card-accent-top' : 'border border-line'}`}>
+            <div className="text-xs text-muted capitalize truncate">
+              {table.replace(/_/g, " ")}
             </div>
-          ))}
-          {populatedTables.length > 8 && (
-            <div className="card p-3 card-accent-top flex items-center justify-center">
-              <div className="text-xs text-muted text-center">
-                +{populatedTables.slice(8).reduce((s, c) => s + c.count, 0).toLocaleString()} more rows
-              </div>
+            <div className={`font-mono-num text-lg mt-1 ${count > 0 ? 'text-white' : 'text-muted'}`}>
+              {count > 0 ? count.toLocaleString() : (
+                <span className="text-xs text-muted">Empty</span>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* Main import/export form */}
       <ExcelImportForm totalRows={totalRows} />

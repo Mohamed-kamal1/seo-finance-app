@@ -32,18 +32,16 @@ export async function importExcel(formData: FormData) {
 }
 
 const TEMPLATE_SHEETS: Record<string, string[]> = {
-  Currencies: ["code", "name", "symbol", "rate_to_base", "is_base"],
-  Clients: ["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status", "total_amount", "collections", "current_due"],
-  "Client Balances": ["client_name", "as_of_date", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "notes"],
-  Invoices: ["internal_id", "client_name", "invoice_date", "service", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "collection_status", "payment_date", "notes"],
-  "Chart of Accounts": ["category", "group_type"],
+  Currencies: ["code", "name", "symbol", "rate_to_base", "is_base", "updated_at"],
+  Clients: ["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status", "total_amount", "collections", "current_due", "created_at"],
+  Invoices: ["internal_id", "client_id", "clients_name", "invoice_date", "service", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "collection_status", "payment_date", "notes", "created_at"],
   Classifications: ["name"],
   Treasuries: ["name", "currency_code", "opening_balance", "opening_date", "notes"],
-  Transactions: ["actual_date", "cf_date", "description", "notes", "debit", "credit", "classification_is", "classification_cf", "treasury_name", "statement"],
-  "Guest Posts": ["name", "client_name", "website_url"],
-  "Guest Post Ledger": ["site_name", "month", "beg_balance", "credit", "content", "transfer", "current_balance"],
-  "Content Billing": ["client_name", "details", "required_amount", "paid_amount", "balance", "currency_code", "period", "notes"],
-  "Content Details": ["words", "price", "currency_code"],
+  Transactions: ["actual_date", "cf_date", "description", "notes", "debit", "credit", "classification_is", "classification_cf", "treasury_account_id", "treasury_accounts_name", "statement", "source", "created_at"],
+  "Guest Posts": ["name", "client_id", "clients_name", "website_url"],
+  "Guest Post Ledger": ["site_id", "guest_post_sites_name", "month", "beg_balance", "credit", "content", "transfer", "current_balance"],
+  "Content Billing": ["client_id", "clients_name", "client_name_raw", "details", "content_detail_ids", "required_amount", "paid_amount", "balance", "currency_code", "period", "notes", "created_at"],
+  "Content Details": ["words", "price", "currency_code", "created_at"],
 };
 
 export async function exportTemplate() {
@@ -64,7 +62,6 @@ const EXPORT_TABLES: Record<string, { table: string; select: string; order: stri
   currencies: { table: "currencies", select: "*", order: "code" },
   clients: { table: "clients", select: "*", order: "name" },
   invoices: { table: "invoices", select: "*, clients(name)", order: "invoice_date" },
-  chart_of_accounts: { table: "chart_of_accounts", select: "*", order: "category" },
   classifications: { table: "classifications", select: "*", order: "name" },
   treasury_accounts: { table: "treasury_accounts", select: "*", order: "name" },
   transactions: { table: "transactions", select: "*, treasury_accounts(name)", order: "actual_date" },

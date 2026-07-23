@@ -10,9 +10,9 @@ function errorText(error: unknown) {
 }
 
 const SHEET_TABLES: Record<string, string> = {
-  currencies: "currencies", clients: "clients", "client balances": "client_balances",
-  balances: "client_balances", invoices: "invoices", "manual invoices": "invoices",
-  "chart of accounts": "chart_of_accounts", classifications: "classifications",
+  currencies: "currencies", clients: "clients",
+  invoices: "invoices", "manual invoices": "invoices",
+  classifications: "classifications",
   treasuries: "treasury_accounts", "treasury accounts": "treasury_accounts",
   transactions: "transactions", ledger: "transactions", "guest posts": "guest_post_sites",
   "guest post sites": "guest_post_sites", "guest post ledger": "guest_post_ledger",
@@ -20,22 +20,22 @@ const SHEET_TABLES: Record<string, string> = {
 };
 
 const COLUMNS: Record<string, Set<string>> = {
-  currencies: new Set(["code", "name", "symbol", "rate_to_base", "is_base"]),
-  clients: new Set(["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status", "total_amount", "collections", "current_due"]),
-  client_balances: new Set(["client_id", "as_of_date", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "notes"]),
-  invoices: new Set(["internal_id", "client_id", "invoice_date", "service", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "collection_status", "payment_date", "notes"]),
-  chart_of_accounts: new Set(["category", "group_type"]), classifications: new Set(["name"]),
+  currencies: new Set(["code", "name", "symbol", "rate_to_base", "is_base", "updated_at"]),
+  clients: new Set(["name", "website", "country", "payment_duration", "currency_code", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "increase_applies_date", "contract_date", "billing_day", "service_type", "notes", "status", "total_amount", "collections", "current_due", "created_at"]),
+  invoices: new Set(["internal_id", "client_id", "invoice_date", "service", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "currency_code", "collection_status", "payment_date", "notes", "created_at"]),
+  classifications: new Set(["name"]),
   treasury_accounts: new Set(["name", "currency_code", "opening_balance", "opening_date", "notes"]),
-  transactions: new Set(["actual_date", "cf_date", "description", "notes", "debit", "credit", "classification_is", "classification_cf", "treasury_account_id", "statement", "source"]),
+  transactions: new Set(["actual_date", "cf_date", "description", "notes", "debit", "credit", "classification_is", "classification_cf", "treasury_account_id", "statement", "source", "created_at"]),
   guest_post_sites: new Set(["name", "client_id", "website_url"]),
   guest_post_ledger: new Set(["site_id", "month", "beg_balance", "credit", "content", "transfer", "current_balance"]),
-  content_billing: new Set(["client_id", "client_name_raw", "details", "required_amount", "paid_amount", "balance", "currency_code", "period", "notes"]),
-  content_details: new Set(["words", "price", "currency_code"]),
+  content_billing: new Set(["client_id", "client_name_raw", "details", "content_detail_ids", "required_amount", "paid_amount", "balance", "currency_code", "period", "notes", "created_at"]),
+  content_details: new Set(["words", "price", "currency_code", "created_at"]),
 };
 
 const ALIASES: Record<string, string> = {
   "client": "client_name", "client name": "client_name", "treasury": "treasury_name", "treasury name": "treasury_name", "site": "site_name", "site name": "site_name",
   "website url": "website_url", "hosting domain": "hosting_domain", "actual date": "actual_date", "cf date": "cf_date", "invoice date": "invoice_date", "payment date": "payment_date", "as of date": "as_of_date", "opening date": "opening_date", "required amount": "required_amount", "paid amount": "paid_amount", "current due": "current_due", "total amount": "total_amount", "collection status": "collection_status", "currency": "currency_code", "currency code": "currency_code", "group type": "group_type", "beg balance": "beg_balance", "current balance": "current_balance", "classifications is": "classification_is", "classifications cf": "classification_cf",
+  "clients name": "clients_name", "treasury accounts name": "treasury_accounts_name", "guest post sites name": "guest_post_sites_name", "content detail ids": "content_detail_ids",
 };
 
 const NUMBERS = new Set(["rate_to_base", "seo_fee", "guest_fee", "hosting_fee", "content_fee", "annual_increase", "seo", "guest", "hosting_domain", "content", "past_due", "discount", "total_amount", "collections", "current_due", "opening_balance", "debit", "credit", "beg_balance", "transfer", "current_balance", "required_amount", "paid_amount", "balance", "price", "words"]);
@@ -60,7 +60,7 @@ function cleanRow(table: string, raw: Row): Row {
   const row: Row = {};
   for (const [header, original] of Object.entries(raw)) {
     const column = columnName(header);
-    if (!COLUMNS[table].has(column) && !["client_name", "treasury_name", "site_name"].includes(column)) continue;
+    if (!COLUMNS[table].has(column) && !["client_name", "treasury_name", "site_name", "clients_name", "treasury_accounts_name", "guest_post_sites_name"].includes(column)) continue;
     if (original === null || original === undefined || original === "") continue;
     row[column] = NUMBERS.has(column) ? numberValue(original) : DATES.has(column) ? dateValue(original) : column === "is_base" ? [true, "true", "yes", "1"].includes(String(original).toLowerCase()) : typeof original === "string" ? original.trim() : original;
   }
@@ -92,9 +92,6 @@ export async function importWorkbook(supabase: SupabaseClient, bytes: ArrayBuffe
   if (!tables.size) throw new Error("No supported, non-empty worksheets were found.");
 
   const counts: Record<string, number> = {};
-  // Currency names are required by the schema, while spreadsheets commonly
-  // contain only a code (for example, "USD"). In that case the code itself is
-  // a clear, valid display name.
   const currencyRows = (tables.get("currencies") || [])
     .filter((row) => row.code)
     .map((row) => ({
@@ -104,7 +101,7 @@ export async function importWorkbook(supabase: SupabaseClient, bytes: ArrayBuffe
       rate_to_base: row.rate_to_base ?? 1,
     }));
   tables.set("currencies", currencyRows);
-  for (const [table, conflict] of [["currencies", "code"], ["chart_of_accounts", "category,group_type"], ["classifications", "name"], ["treasury_accounts", "name"]] as const) {
+  for (const [table, conflict] of [["currencies", "code"], ["classifications", "name"], ["treasury_accounts", "name"]] as const) {
     const rows = tables.get(table) || [];
     if (rows.length) { await write(supabase, table, rows, conflict); counts[table] = rows.length; }
   }
@@ -118,26 +115,34 @@ export async function importWorkbook(supabase: SupabaseClient, bytes: ArrayBuffe
   const clientIds = await lookup(supabase, "clients");
   const treasuryIds = await lookup(supabase, "treasury_accounts");
   const sites = tables.get("guest_post_sites") || [];
-  for (const row of sites) { if (row.client_name) { row.client_id = clientIds.get(String(row.client_name)); delete row.client_name; } }
+  for (const row of sites) {
+    if (row.clients_name && !row.client_id) { row.client_name = row.clients_name; delete row.clients_name; }
+    if (row.client_name) { row.client_id = clientIds.get(String(row.client_name)); delete row.client_name; }
+  }
   if (sites.length) { await write(supabase, "guest_post_sites", sites, "name"); counts.guest_post_sites = sites.length; }
   const siteIds = await lookup(supabase, "guest_post_sites");
   const importedClientIds = new Set<string>();
-  for (const table of ["client_balances", "invoices", "transactions", "guest_post_ledger", "content_billing", "content_details"]) {
+  for (const table of ["invoices", "transactions", "guest_post_ledger", "content_billing", "content_details"]) {
     const rows: Row[] = [];
     for (const source of tables.get(table) || []) {
       const row = { ...source };
+      if (row.clients_name && !row.client_id) { row.client_name = row.clients_name; delete row.clients_name; }
       if (row.client_name) { row.client_id = clientIds.get(String(row.client_name)); if (table === "content_billing") row.client_name_raw ||= String(row.client_name); delete row.client_name; }
+      if (row.treasury_accounts_name && !row.treasury_account_id) { row.treasury_name = row.treasury_accounts_name; delete row.treasury_accounts_name; }
       if (row.treasury_name) { row.treasury_account_id = treasuryIds.get(String(row.treasury_name)); delete row.treasury_name; }
+      if (row.guest_post_sites_name && !row.site_id) { row.site_name = row.guest_post_sites_name; delete row.guest_post_sites_name; }
       if (row.site_name) { row.site_id = siteIds.get(String(row.site_name)); delete row.site_name; }
-      if (source.client_name && !row.client_id) {
+      if (source.client_name && !row.client_id && !(source.clients_name && row.client_id)) {
         throw new Error(`Table "${table}": client "${String(source.client_name)}" was not found in the Clients sheet or database.`);
       }
-      if (source.treasury_name && !row.treasury_account_id) {
+      if (source.treasury_name && !row.treasury_account_id && !(source.treasury_accounts_name && row.treasury_account_id)) {
         throw new Error(`Table "${table}": treasury "${String(source.treasury_name)}" was not found in the Treasuries sheet or database.`);
       }
-      if (source.site_name && !row.site_id) {
+      if (source.site_name && !row.site_id && !(source.guest_post_sites_name && row.site_id)) {
         throw new Error(`Table "${table}": guest-post site "${String(source.site_name)}" was not found in the Guest Posts sheet or database.`);
       }
+      delete row.created_at;
+      delete row.updated_at;
       rows.push(row);
       if (table === "invoices" && row.client_id) importedClientIds.add(String(row.client_id));
     }

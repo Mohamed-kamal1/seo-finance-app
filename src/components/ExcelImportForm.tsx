@@ -127,8 +127,8 @@ export default function ExcelImportForm({ totalRows = 0 }: ExcelImportFormProps)
   }
 
   const supportedSheets = [
-    "Currencies", "Clients", "Client Balances", "Invoices",
-    "Chart of Accounts", "Classifications", "Treasuries",
+    "Currencies", "Clients", "Invoices",
+    "Classifications", "Treasuries",
     "Transactions", "Guest Posts", "Guest Post Ledger",
     "Content Billing", "Content Details",
   ];
